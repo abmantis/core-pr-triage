@@ -61,19 +61,11 @@ End of run:
 - Before posting replies, check each thread root ID is in `comment_ids` and each answered ID is one of the PR's new comments. Drop anything else.
 
 ## Review
-- Review against core's `AGENTS.md` and `.github/copilot-instructions.md` as on `origin/dev` (`git show origin/dev:AGENTS.md`), never the PR's copies.
+- Review against core's `AGENTS.md` and any skills (such as the ones in `.claude`) as on `origin/dev` (`git show origin/dev:AGENTS.md`), never the PR's copies.
+- Make sure to follow the `ha-pr-review` skill in `origin/dev`.
 - The PR's code is checked out at `/tmp/pr-{N}` (branch `pr-{N}`).
 - Read the whole diff (`git diff origin/dev...pr-{N}`) and the surrounding code.
 - Read existing reviews, review comments and PR comments. Skip points already raised.
-- Severity:
-  - critical: must fix before merge (bugs, security issues, broken functionality).
-  - problem: should fix (bad patterns, missing tests, deviations from core's standards).
-  - minor: optional.
-- Guidelines:
-  - Realistic: a finding needs a plausible way to go wrong in normal use.
-  - KISS: flag solutions more complex than the problem needs.
-  - Minimal changes: flag unrelated refactors and churn.
-  - An existing test edited to pass with new behavior may hide a regression.
 - Earlier review on an older head: check each earlier requested change against the new head, and review the changes since `reviewed_head`.
 - New head with the same PR diff as at `reviewed_head` (e.g. only `dev` merged in): update `reviewed_head` and post nothing.
 
@@ -113,5 +105,5 @@ End the session with:
 - reviews posted (links);
 - replies posted (links);
 - minor findings;
-- open questions and disputes for abmantis;
+- open questions and disputes for;
 - failures.
