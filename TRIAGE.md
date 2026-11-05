@@ -31,11 +31,14 @@ End of run:
 3. Commit and push.
 
 ## Which PRs
-- New: open, non-draft PRs with `abmantis` in `requested_reviewers`, from `gh api "repos/home-assistant/core/pulls?state=open&sort=updated&direction=desc&per_page=100&page=N"`.
+- Candidates: open, non-draft PRs from `gh api "repos/home-assistant/core/pulls?state=open&sort=updated&direction=desc&per_page=100"`.
 - Tracked: every PR in `prs`, until it's closed or merged.
 - Skip PRs in `muted`.
-- A PR where `abmantis` posted by hand after the routine's last post goes into `muted`.
-- Review a PR when its head SHA differs from `reviewed_head`. At most 10 reviews per run, oldest update first.
+- A PR with any hand-made `abmantis` post goes into `muted`.
+- Review a PR when its head SHA differs from `reviewed_head`, or it has none.
+- At most 3 reviews per run, in this order:
+  1. tracked PRs with a new head;
+  2. other candidates, most recently updated first.
 - Check every tracked PR for replies (see Replies).
 - One subagent per PR review.
 
