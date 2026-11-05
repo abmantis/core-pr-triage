@@ -8,7 +8,6 @@ Claude routine that reviews home-assistant/core PRs and answers replies to its r
 ## Routine setup
 Create a scheduled routine at claude.ai/code:
 - Repositories: `abmantis/core-pr-triage`, `home-assistant/core`.
-- Schedule: hourly.
 - Model: Opus 5.5.
 - Environment: `GH_TOKEN` set to a classic `hacoreview` token with scope `public_repo`.
 - Instructions:
