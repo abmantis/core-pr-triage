@@ -4,6 +4,7 @@ Claude routine that reviews home-assistant/core PRs and answers replies to its r
 
 - `TRIAGE.md`: the routine's instructions.
 - `state.json`: the routine's state, updated by the routine through one PR per run.
+- `dashboard.html`: the PRs the routine reviewed and their state, rebuilt by `dashboard.py` at the end of each run.
 
 ## Routine setup
 Create a scheduled routine at claude.ai/code:
