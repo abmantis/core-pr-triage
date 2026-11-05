@@ -15,12 +15,14 @@ Hourly run. Reviews home-assistant/core PRs and answers replies, posting as the 
 `state.json` on `main` of abmantis/core-pr-triage. Start from `{}` if it doesn't exist yet.
 - `last_run_at`: start time of the last finished run.
 - `running_since`: start time of the run in progress.
-- `muted`: PR numbers to leave alone (also edited by hand).
+- `muted`: PR numbers to leave alone (edited by hand).
 - `prs.{N}`: `reviewed_head`, `review_ids`, `comment_ids` (inline comments and replies posted), `replied_to` (comment IDs already handled).
+- Commit and push after every post, so a crash doesn't lose posted IDs.
+- Before each push, pull `main`. On a conflict, keep the `muted` entries from both sides.
 
 Start of run:
 1. If `running_since` is less than 90 minutes old, stop.
-2. Set `running_since` to now, commit and push.
+2. Set `running_since` to now, commit and push. If the push is rejected, pull and go back to step 1.
 
 End of run:
 1. Drop closed and merged PRs from `prs`.
@@ -31,7 +33,6 @@ End of run:
 - Candidates: open, non-draft PRs from `gh api "repos/home-assistant/core/pulls?state=open&sort=updated&direction=desc&per_page=100"`.
 - Tracked: open PRs in `prs`.
 - Skip PRs in `muted`.
-- `abmantis` is shared with a human: a PR with any `abmantis` post not recorded in `state.json` goes into `muted`.
 - Review a PR when its head SHA differs from `reviewed_head`, or it has none.
 - At most 3 reviews per run, in this order:
   1. tracked PRs with a new head;
@@ -53,6 +54,7 @@ End of run:
   - Minimal changes: flag unrelated refactors and churn.
   - An existing test edited to pass with new behavior may hide a regression.
 - Earlier review on an older head: check each earlier requested change against the new head, and review the changes since `reviewed_head`.
+- New head with the same PR diff as at `reviewed_head` (e.g. only `dev` merged in): update `reviewed_head` and post nothing.
 
 ## Posting a review
 - One review per head commit: `gh api -X POST repos/home-assistant/core/pulls/{N}/reviews --input review.json`, with `commit_id` = head SHA and `event` = `COMMENT`.
@@ -62,9 +64,9 @@ End of run:
   - On a re-review: earlier requested changes as fixed / still open, plus new findings.
 - Each requested change on a diff line also gets an inline comment (`path`, `line`, optional `start_line`, `side: RIGHT`). Add a `suggestion` block when the fix is a small, exact replacement of those lines.
 - Inline comment rejected with 422: move it into the body and post again.
-- Minor findings and clean reviews: post nothing.
+- No critical or problem findings: post a short review saying the PR looks good. Minor findings are not posted.
 - Tone: short, direct, friendly. One voice; no mention of models or tools.
-- Record `reviewed_head`, the review ID and inline comment IDs in `state.json`.
+- Record `reviewed_head` after every review, posted or not, plus the review ID and inline comment IDs, in `state.json`.
 
 ## Replies
 For every tracked PR:
@@ -88,6 +90,6 @@ For every tracked PR:
 End the session with:
 - reviews posted (links);
 - replies posted (links);
-- clean reviews and minor findings;
+- minor findings;
 - open questions and disputes for abmantis;
 - failures.
