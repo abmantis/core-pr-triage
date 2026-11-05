@@ -1,6 +1,6 @@
 # core-pr-triage
 
-Claude routine that reviews home-assistant/core PRs and answers replies to its reviews, posting as `abmantis`.
+Claude routine that reviews home-assistant/core PRs and answers replies to its reviews, posting as the bot user `hacoreview`.
 
 - `TRIAGE.md`: the routine's instructions.
 - `state.json`: the routine's state, created and updated by the routine on `main`.
@@ -10,7 +10,7 @@ Create a scheduled routine at claude.ai/code:
 - Repositories: `abmantis/core-pr-triage`, `home-assistant/core`.
 - Schedule: hourly.
 - Model: Opus 5.5.
-- Environment: default.
+- Environment: `GH_TOKEN` set to a classic `hacoreview` token with scope `public_repo`.
 - Instructions:
   ```
   Read TRIAGE.md in the core-pr-triage clone and follow it. Push state.json changes directly to main of abmantis/core-pr-triage.
