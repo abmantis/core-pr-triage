@@ -3,7 +3,7 @@
 Claude routine that reviews home-assistant/core PRs and answers replies to its reviews, posting as the bot user `hacoreview`.
 
 - `TRIAGE.md`: the routine's instructions.
-- `state.json`: the routine's state, created and updated by the routine on `main`.
+- `state.json`: the routine's state, updated by the routine through one PR per run.
 
 ## Routine setup
 Create a scheduled routine at claude.ai/code:
@@ -12,8 +12,12 @@ Create a scheduled routine at claude.ai/code:
 - Environment: `GH_TOKEN` set to a classic `hacoreview` token with scope `public_repo`.
 - Instructions:
   ```
-  Read TRIAGE.md in the core-pr-triage clone and follow it. Push state.json changes directly to main of abmantis/core-pr-triage.
+  Read TRIAGE.md in the core-pr-triage clone and follow it. Push state.json changes to the run's branch in abmantis/core-pr-triage, as TRIAGE.md says.
   ```
+
+In abmantis/core-pr-triage:
+- Give `hacoreview` write access. It opens, closes and merges the state PRs.
+- Enable "Automatically delete head branches", so merged `run/` branches don't pile up.
 
 ## Notes
 - The GitHub proxy serves only repositories attached to the routine, so core is attached and cloned on every run.
