@@ -1,6 +1,6 @@
-# Post a review or reply on home-assistant/core as hacoreview.
+# Post a review or reply on home-assistant/core as abmantis.
 # The routine dispatches this instead of posting itself: posts made through Claude's GitHub proxy get a footer,
-# and the routine may run as a user other than hacoreview.
+# and the routine may run as a user other than abmantis.
 # Results go out as annotations: a `posted` notice with the IDs, or an error with the reason.
 
 name: Post
@@ -85,7 +85,7 @@ jobs:
 
       - name: Post it
         env:
-          GH_TOKEN: ${{ secrets.HACOREVIEW_TOKEN }}
+          GH_TOKEN: ${{ secrets.ABMANTIS_TOKEN }}
         run: |
           set -euo pipefail
           fail() {
