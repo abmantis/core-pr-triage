@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build dashboard.html from state.json and the core PRs the bot reviewed."""
+"""Build dashboard.html from state.json and the core PRs the routine's user reviewed."""
 
 import argparse
 import datetime as dt
@@ -159,7 +159,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--state", default="state.json")
     parser.add_argument("--out", default="dashboard.html")
-    parser.add_argument("--reviewer", default="hacoreview")
+    parser.add_argument("--reviewer", default="abmantis")
     parser.add_argument("--days", type=int, default=7)
     args = parser.parse_args()
     path = Path(args.state)
