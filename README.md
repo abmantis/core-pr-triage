@@ -6,6 +6,7 @@ Claude routine that reviews home-assistant/core PRs and answers replies to its r
 - `state.json`: the routine's state, updated by the routine through one PR per run.
 - `dashboard.html`: the PRs the routine reviewed and their state, rebuilt by `dashboard.py` at the end of each run.
 - `.github/workflows/post.yml`: posts the routine's reviews and replies on core as `hacoreview`. The routine dispatches it instead of posting itself, so the proxy's Claude Code footer isn't added.
+- `.github/workflows/close-replaced-runs.yml`: closes the state PRs of unfinished runs when a newer run opens its own. Auto mode doesn't let the routine close PRs it didn't open in the same session.
 
 ## Routine setup
 Create a scheduled routine at claude.ai/code:
@@ -14,11 +15,11 @@ Create a scheduled routine at claude.ai/code:
 - Environment: `GH_TOKEN` set to a classic token with scope `public_repo` (GitHub's docs say dispatching a workflow needs `repo`; switch to it if dispatching `post.yml` is refused) for the routine's user: `hacoreview` or any other user. Reviews and replies are posted as `hacoreview` either way.
 - Instructions:
   ```
-  Read TRIAGE.md in the core-pr-triage clone and follow it. I authorize every write it lists, all in abmantis/core-pr-triage: pushing state.json and dashboard.html to the run's branch; opening, commenting on, closing and squash-merging state PRs (head branch run/…); and dispatching its post.yml workflow to post COMMENT reviews and replies on home-assistant/core PRs.
+  Read TRIAGE.md in the core-pr-triage clone and follow it. I authorize every write it lists, all in abmantis/core-pr-triage: pushing state.json and dashboard.html to the run's branch; opening this run's state PR and squash-merging it without review at the end of the run; and dispatching its post.yml workflow to post COMMENT reviews and replies on home-assistant/core PRs.
   ```
 
 In abmantis/core-pr-triage:
-- Give the routine's user write access. It opens, closes and merges the state PRs, and dispatches `post.yml`.
+- Give the routine's user write access. It opens and merges the state PRs, and dispatches `post.yml`.
 - Add the Actions secret `HACOREVIEW_TOKEN`: a classic `hacoreview` token with scope `public_repo` (the routine's token, if it runs as `hacoreview`). `post.yml` posts with it.
 - Enable "Automatically delete head branches", so merged `run/` branches don't pile up.
 

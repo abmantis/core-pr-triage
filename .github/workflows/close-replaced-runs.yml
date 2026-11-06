@@ -1,0 +1,35 @@
+# Close the state PRs of unfinished runs when a newer run opens its own.
+# The routine doesn't close them itself: auto mode blocks closing PRs the agent didn't open in the same session.
+
+name: Close replaced runs
+run-name: Close runs replaced by #${{ github.event.pull_request.number }}
+
+on:
+  pull_request:
+    types: [opened]
+    branches: [main]
+
+permissions: {}
+
+jobs:
+  close:
+    name: Close replaced runs
+    if: startsWith(github.event.pull_request.head.ref, 'run/') && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      NEW: ${{ github.event.pull_request.number }}
+    steps:
+      - name: Close older state PRs
+        run: |
+          set -euo pipefail
+          older=$(gh api --paginate "repos/$REPO/pulls?state=open&per_page=100" \
+            --jq ".[] | select(.head.repo.full_name == \"$REPO\" and (.head.ref | startswith(\"run/\")) and .number < $NEW) | .number")
+          for n in $older; do
+            gh api -X POST "repos/$REPO/issues/$n/comments" -f body="This run didn't finish. #$NEW replaces it." > /dev/null
+            gh api -X PATCH "repos/$REPO/pulls/$n" -f state=closed > /dev/null
+            echo "Closed #$n"
+          done
