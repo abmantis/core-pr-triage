@@ -52,7 +52,7 @@ End of run:
 - Before spawning, in the core clone: `git fetch origin dev pull/{N}/head:pr-{N}`, then `git worktree add -q /tmp/pr-{N} pr-{N}`. If it has a `reviewed_head`, also `git fetch origin {reviewed_head}`, so it's there after a force-push.
 - Give each subagent: PR number, head SHA, its `prs.{N}` entry, `last_run_at`, whether to review, whether fetching `reviewed_head` failed, the Rules, Review, Posting a review and Replies sections, and the read-only rule and return list below.
 - Subagents only read: no posts, no file writes, no `git fetch`. They return:
-  - the review to post (body and inline comments), or none;
+  - the review to post (body and inline comments); with no critical or problem findings, a short review saying the PR looks good. None only when not asked to review, or when the PR diff is unchanged since `reviewed_head`;
   - replies to post, each with its target (thread root ID or conversation) and the comment IDs it answers;
   - comment IDs handled without a reply;
   - minor findings, questions and disputes for the run summary.
@@ -67,7 +67,7 @@ End of run:
   - Architecture discussion: when one is required and the PR body links none, flag it. Never check whether a linked one is approved, and never say it isn't.
   - Findings tagged `[PRE-EXISTING]`, `[SUGGESTION]` or `[NIT]` are minor findings: return them for the run summary, never in the review.
 - The PR's code is checked out at `/tmp/pr-{N}` (branch `pr-{N}`).
-- Read the whole diff (`git diff origin/dev...pr-{N}`) and the surrounding code.
+- Read the whole diff with `gh api repos/home-assistant/core/pulls/{N} -H "Accept: application/vnd.github.diff"`. If GitHub refuses it as too large, read each file's `patch` from `pulls/{N}/files?per_page=100&page=…` instead. Read the surrounding code at `/tmp/pr-{N}`. Don't diff against `dev` locally: the clone is shallow, so local diffs don't match the PR.
 - Read existing reviews, review comments and PR comments. Skip points already raised.
 - Earlier review on an older head: check each earlier requested change against the new head, and review the changes since `reviewed_head` (the whole diff if fetching it failed).
 - New head with the same PR diff as at `reviewed_head` (e.g. only `dev` merged in): update `reviewed_head` and post nothing.
