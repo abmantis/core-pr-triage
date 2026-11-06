@@ -37,13 +37,13 @@ End of run:
 5. Commit, push, and squash-merge the state PR: `gh api -X PUT repos/abmantis/core-pr-triage/pulls/{P}/merge -f merge_method=squash`.
 
 ## Which PRs
-- Candidates: open, non-draft PRs from `gh api "repos/home-assistant/core/pulls?state=open&sort=updated&direction=desc&per_page=100"`.
+- Candidates: open, non-draft PRs from `gh api "repos/home-assistant/core/pulls?state=open&sort=updated&direction=asc&per_page=100"`.
 - Tracked: open PRs in `prs`. Get each one's state from `gh api repos/home-assistant/core/pulls/{N} --jq '{state, draft, head: .head.sha, author: .user.login}'`.
 - Skip PRs in `muted`, for both reviews and replies.
 - Review a PR when its head SHA differs from `reviewed_head`, or it has none.
 - At most 3 posted reviews per run (reviews that post nothing don't count), in this order:
   1. tracked PRs with a new head;
-  2. other candidates, most recently updated first.
+  2. other candidates, least recently updated first.
 - Never run more review subagents than slots left.
 
 ## Subagents
