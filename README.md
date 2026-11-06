@@ -14,7 +14,7 @@ Create a scheduled routine at claude.ai/code:
 - Environment: `GH_TOKEN` set to a classic token with scope `public_repo` (GitHub's docs say dispatching a workflow needs `repo`; switch to it if dispatching `post.yml` is refused) for the routine's user: `hacoreview` or any other user. Reviews and replies are posted as `hacoreview` either way.
 - Instructions:
   ```
-  Read TRIAGE.md in the core-pr-triage clone and follow it. Push state.json changes to the run's branch in abmantis/core-pr-triage, as TRIAGE.md says.
+  Read TRIAGE.md in the core-pr-triage clone and follow it. I authorize every write it lists, all in abmantis/core-pr-triage: pushing state.json and dashboard.html to the run's branch; opening, commenting on, closing and squash-merging state PRs (head branch run/…); and dispatching its post.yml workflow to post COMMENT reviews and replies on home-assistant/core PRs.
   ```
 
 In abmantis/core-pr-triage:
