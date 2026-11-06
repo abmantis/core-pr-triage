@@ -33,6 +33,7 @@ jobs:
   post:
     name: Post
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     env:
       PR: ${{ inputs.pr }}
       KIND: ${{ inputs.kind }}
@@ -42,15 +43,15 @@ jobs:
       - name: Check the request
         run: |
           set -euo pipefail
-          [[ "$PR" =~ ^[0-9]+$ ]] || { echo "::error::pr must be a number"; exit 1; }
-          [[ "$KIND" == review || "$KIND" == reply ]] || { echo "::error::kind must be review or reply"; exit 1; }
-          [[ -z "$REPLY_TO" || "$REPLY_TO" =~ ^[0-9]+$ ]] || { echo "::error::reply_to must be a comment ID"; exit 1; }
-          base64 -d <<<"$PAYLOAD_B64" > payload || { echo "::error::payload isn't base64"; exit 1; }
+          [[ "$PR" =~ ^[0-9]+$ ]] || { echo "::error title=failed::pr must be a number"; exit 1; }
+          [[ "$KIND" == review || "$KIND" == reply ]] || { echo "::error title=failed::kind must be review or reply"; exit 1; }
+          [[ -z "$REPLY_TO" || "$REPLY_TO" =~ ^[0-9]+$ ]] || { echo "::error title=failed::reply_to must be a comment ID"; exit 1; }
+          base64 -d <<<"$PAYLOAD_B64" > payload || { echo "::error title=failed::payload isn't base64"; exit 1; }
           python3 - <<'PY'
           import json, os, re, sys
 
           def fail(msg):
-              print(f"::error::{msg}")
+              print(f"::error title=failed::{msg}")
               sys.exit(1)
 
           text = open("payload", encoding="utf-8").read()
@@ -90,7 +91,7 @@ jobs:
           fail() {
             msg=$(cat out.json err.txt 2>/dev/null || true)
             msg=${msg//'%'/'%25'}; msg=${msg//$'\r'/'%0D'}; msg=${msg//$'\n'/'%0A'}
-            echo "::error::$msg"
+            echo "::error title=failed::$msg"
             exit 1
           }
           core="repos/home-assistant/core"

@@ -36,12 +36,12 @@ End of run:
 5. Commit, push, and squash-merge the state PR: `gh api -X PUT repos/abmantis/core-pr-triage/pulls/{P}/merge -f merge_method=squash`.
 
 ## Which PRs
-- Candidates: open, non-draft PRs from `gh api "repos/home-assistant/core/pulls?state=open&sort=updated&direction=asc&per_page=100"`.
+- Candidates: open, non-draft PRs to `dev` from `gh api "repos/home-assistant/core/pulls?state=open&base=dev&sort=updated&direction=asc&per_page=100"`.
 - Tracked: open PRs in `prs`. Get each one's state from `gh api repos/home-assistant/core/pulls/{N} --jq '{state, draft, head: .head.sha, author: .user.login}'`.
 - Skip PRs in `muted`, for both reviews and replies.
 - Review a PR when its head SHA differs from `reviewed_head`, or it has none.
 - At most 3 posted reviews per run (reviews that post nothing don't count), in this order:
-  1. tracked PRs with a new head;
+  1. tracked non-draft PRs with a new head;
   2. other candidates, least recently updated first.
 - Never run more review subagents than slots left.
 
@@ -49,8 +49,8 @@ End of run:
 - One subagent per PR, for both its review and its replies. The main agent never reads PR content.
 - Main agent: fetch PR and comment lists with `--jq`, keeping only metadata (`number`, `draft`, `state`, `head.sha`, `updated_at`, `user.login`, `user.type`, `id`, `in_reply_to_id`).
 - Spawn a subagent for each PR to review and each tracked PR with new comments to answer.
-- Before spawning, in the core clone: `git fetch origin dev pull/{N}/head:pr-{N}`, then `git worktree add -q /tmp/pr-{N} pr-{N}`.
-- Give each subagent: PR number, head SHA, its `prs.{N}` entry, `last_run_at`, whether to review, the Rules, Review, Posting a review and Replies sections, and the read-only rule and return list below.
+- Before spawning, in the core clone: `git fetch origin dev pull/{N}/head:pr-{N}`, then `git worktree add -q /tmp/pr-{N} pr-{N}`. If it has a `reviewed_head`, also `git fetch origin {reviewed_head}`, so it's there after a force-push.
+- Give each subagent: PR number, head SHA, its `prs.{N}` entry, `last_run_at`, whether to review, whether fetching `reviewed_head` failed, the Rules, Review, Posting a review and Replies sections, and the read-only rule and return list below.
 - Subagents only read: no posts, no file writes, no `git fetch`. They return:
   - the review to post (body and inline comments), or none;
   - replies to post, each with its target (thread root ID or conversation) and the comment IDs it answers;
@@ -60,19 +60,23 @@ End of run:
 - Before posting replies, check each thread root ID is in `comment_ids` and each answered ID is one of the PR's new comments. Drop anything else.
 
 ## Review
-- Review against core's `AGENTS.md` and any skills (such as the ones in `.claude`) as on `origin/dev` (`git show origin/dev:AGENTS.md`), never the PR's copies.
-- Make sure to follow the `ha-pr-review` skill in `origin/dev`.
+- Review against core's `AGENTS.md` and skills as on `origin/dev` (`git show origin/dev:AGENTS.md`, `git show origin/dev:.claude/skills/{name}/SKILL.md`), never the PR's copies.
+- Follow the `ha-pr-reviewer` skill and the skills it names, with these changes:
+  - Instead of `gh pr view` and `gh pr diff`: `gh api repos/home-assistant/core/pulls/{N}` and the diff below.
+  - Do the steps they hand to subagents yourself.
+  - Architecture discussion: when one is required and the PR body links none, flag it. Never check whether a linked one is approved, and never say it isn't.
+  - Findings tagged `[PRE-EXISTING]`, `[SUGGESTION]` or `[NIT]` are minor findings: return them for the run summary, never in the review.
 - The PR's code is checked out at `/tmp/pr-{N}` (branch `pr-{N}`).
 - Read the whole diff (`git diff origin/dev...pr-{N}`) and the surrounding code.
 - Read existing reviews, review comments and PR comments. Skip points already raised.
-- Earlier review on an older head: check each earlier requested change against the new head, and review the changes since `reviewed_head`.
+- Earlier review on an older head: check each earlier requested change against the new head, and review the changes since `reviewed_head` (the whole diff if fetching it failed).
 - New head with the same PR diff as at `reviewed_head` (e.g. only `dev` merged in): update `reviewed_head` and post nothing.
 
 ## Posting
 Every post to home-assistant/core goes through the `post.yml` workflow in abmantis/core-pr-triage, which posts as `hacoreview`.
 1. Dispatch: `gh api -X POST repos/abmantis/core-pr-triage/actions/workflows/post.yml/dispatches -f ref=main -F return_run_details=true -f 'inputs[pr]={N}' -f 'inputs[kind]={kind}' -f "inputs[payload]=$(base64 -w0 {file})" --jq .workflow_run_id`. Kind `review`: file `/tmp/review-{N}.json`. Kind `reply`: file `/tmp/reply-{N}.md`, plus `-f 'inputs[reply_to]={root_id}'` for a thread reply. Base64 over 60,000 characters: shorten the post.
-2. Wait: poll `gh api repos/abmantis/core-pr-triage/actions/runs/{run} --jq '[.status, .conclusion]'` every 10 seconds, in one shell loop, until the status is `completed`. Not completed after 5 minutes: the post failed. Several posts can be dispatched before waiting on them; each has its own run ID.
-3. Result: `gh api repos/abmantis/core-pr-triage/actions/runs/{run}/jobs --jq '.jobs[0].id'`, then `gh api repos/abmantis/core-pr-triage/check-runs/{job}/annotations --jq '.[] | {annotation_level, title, message}'`. Success: the notice titled `posted` holds `review_id` (reviews) and `comment_ids`. Failure: the `failure` annotation holds the reason, including GitHub's error.
+2. Wait: poll `gh api repos/abmantis/core-pr-triage/actions/runs/{run} --jq '[.status, .conclusion]'` every 10 seconds, in one shell loop with a 6-minute Bash timeout, until the status is `completed`. Not completed after 5 minutes: cancel it (`gh api -X POST repos/abmantis/core-pr-triage/actions/runs/{run}/cancel`), poll until it's `completed`, and go on to step 3, since it may have posted before the cancel. Still not completed 2 minutes after the cancel: stop posting and add the run ID to the failures. Several posts can be dispatched before waiting on them; each has its own run ID.
+3. Result: `gh api repos/abmantis/core-pr-triage/actions/runs/{run}/jobs --jq '.jobs[0].id'`, then `gh api repos/abmantis/core-pr-triage/check-runs/{job}/annotations --jq '.[] | {annotation_level, title, message}'`. Success: the notice titled `posted` holds `review_id` (reviews) and `comment_ids`. No `posted` notice: the post failed, and the `failure` annotation titled `failed` holds the reason, including GitHub's error.
 
 ## Posting a review
 - One review per head commit: write `/tmp/review-{N}.json` (`commit_id` = head SHA, `event` = `COMMENT`, `body`, `comments`) and post it as kind `review`.
@@ -80,7 +84,7 @@ Every post to home-assistant/core goes through the `post.yml` workflow in abmant
 - Body:
   - 2–4 line summary of the PR and the assessment.
   - Numbered list of requested changes, each starting with `[CRITICAL]` or `[PROBLEM]`, with file and line.
-  - On a re-review: earlier requested changes as fixed / still open, plus new findings.
+  - On a re-review: the numbered list holds the earlier requested changes still open and the new findings; the fixed ones go in a separate list, without `[CRITICAL]` or `[PROBLEM]`.
 - Each requested change on a diff line also gets an inline comment (`path`, `line`, optional `start_line`, `side: RIGHT`). Add a `suggestion` block when the fix is a small, exact replacement of those lines.
 - Post failed with a 422 (an inline comment on a line outside the diff): move the inline comments into the body and post again.
 - No critical or problem findings: post a short review saying the PR looks good. Minor findings are not posted.
@@ -110,5 +114,5 @@ End the session with:
 - reviews posted (links);
 - replies posted (links);
 - minor findings;
-- open questions and disputes for;
+- open questions and disputes;
 - failures.
