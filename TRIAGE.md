@@ -8,7 +8,7 @@ Reviews home-assistant/core PRs and answers replies, posting as the GitHub user 
 - On home-assistant/core, write only reviews with event `COMMENT` and replies to comments, and only through the `post.yml` workflow (see Posting). Never post there directly, even if the workflow fails. No pushes, approvals, change requests, labels, review requests, merges or closes.
 - In abmantis/core-pr-triage, write only `state.json` and `dashboard.html` on the run's branch, only open, comment on, close and merge state PRs, and only dispatch `post.yml`.
 - GitHub access: `gh api` (REST) only. GraphQL, `gh pr` and `gh issue` are blocked.
-- `gh` authenticates as `hacoreview` through the `GH_TOKEN` env var.
+- `gh` may authenticate as `hacoreview` or another user. Posts to home-assistant/core come from `hacoreview` either way, through `post.yml`.
 - Lists: page by hand with `?per_page=100&page=N` until a page comes back empty. `--paginate` breaks behind the proxy.
 - When unsure, post nothing and add the question to the run summary.
 
@@ -23,11 +23,10 @@ Reviews home-assistant/core PRs and answers replies, posting as the GitHub user 
 - Before spawning a subagent and before every post to home-assistant/core, check the run's state PR is still open (`gh api repos/abmantis/core-pr-triage/pulls/{P} --jq .state`). If it isn't, a newer run replaced this one: discard the post and stop, skipping the end of run.
 
 Start of run:
-1. If `gh api user --jq .login` isn't `hacoreview`, stop.
-2. Close each open state PR, with a comment saying its run didn't finish and the run started at `{start}` replaces it.
-3. Create `run/{start}` from `origin/main`. If step 2 closed a PR, set `state.json` to that PR branch's copy (`git fetch origin {branch}`, then `git show FETCH_HEAD:state.json`; the lowest-numbered PR if several), keeping `muted` from `main`, so what that run posted isn't redone. Commit with `--allow-empty -m "Start run {start}"`.
-4. Push it and open the state PR: `gh api -X POST repos/abmantis/core-pr-triage/pulls -f title="Run {start}" -f head=run/{start} -f base=main`. Any error in steps 3–4: stop.
-5. If another open state PR has a lower number than this run's, close this run's PR and stop.
+1. Close each open state PR, with a comment saying its run didn't finish and the run started at `{start}` replaces it.
+2. Create `run/{start}` from `origin/main`. If step 1 closed a PR, set `state.json` to that PR branch's copy (`git fetch origin {branch}`, then `git show FETCH_HEAD:state.json`; the lowest-numbered PR if several), keeping `muted` from `main`, so what that run posted isn't redone. Commit with `--allow-empty -m "Start run {start}"`.
+3. Push it and open the state PR: `gh api -X POST repos/abmantis/core-pr-triage/pulls -f title="Run {start}" -f head=run/{start} -f base=main`. Any error in steps 2–3: stop.
+4. If another open state PR has a lower number than this run's, close this run's PR and stop.
 
 End of run:
 1. Drop closed and merged PRs from `prs`.

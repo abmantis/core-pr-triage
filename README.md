@@ -11,15 +11,15 @@ Claude routine that reviews home-assistant/core PRs and answers replies to its r
 Create a scheduled routine at claude.ai/code:
 - Repositories: `abmantis/core-pr-triage`, `home-assistant/core`.
 - Model: Opus 5.5.
-- Environment: `GH_TOKEN` set to a classic `hacoreview` token with scope `public_repo` (GitHub's docs say dispatching a workflow needs `repo`; switch to it if dispatching `post.yml` is refused).
+- Environment: `GH_TOKEN` set to a classic token with scope `public_repo` (GitHub's docs say dispatching a workflow needs `repo`; switch to it if dispatching `post.yml` is refused) for the routine's user: `hacoreview` or any other user. Reviews and replies are posted as `hacoreview` either way.
 - Instructions:
   ```
   Read TRIAGE.md in the core-pr-triage clone and follow it. Push state.json changes to the run's branch in abmantis/core-pr-triage, as TRIAGE.md says.
   ```
 
 In abmantis/core-pr-triage:
-- Give `hacoreview` write access. It opens, closes and merges the state PRs, and dispatches `post.yml`.
-- Add the Actions secret `HACOREVIEW_TOKEN`: the same `hacoreview` token. `post.yml` posts with it.
+- Give the routine's user write access. It opens, closes and merges the state PRs, and dispatches `post.yml`.
+- Add the Actions secret `HACOREVIEW_TOKEN`: a classic `hacoreview` token with scope `public_repo` (the routine's token, if it runs as `hacoreview`). `post.yml` posts with it.
 - Enable "Automatically delete head branches", so merged `run/` branches don't pile up.
 
 ## Notes

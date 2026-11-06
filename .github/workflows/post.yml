@@ -1,5 +1,6 @@
 # Post a review or reply on home-assistant/core as hacoreview.
-# The routine dispatches this instead of posting itself: posts made through Claude's GitHub proxy get a footer.
+# The routine dispatches this instead of posting itself: posts made through Claude's GitHub proxy get a footer,
+# and the routine may run as a user other than hacoreview.
 # Results go out as annotations: a `posted` notice with the IDs, or an error with the reason.
 
 name: Post
